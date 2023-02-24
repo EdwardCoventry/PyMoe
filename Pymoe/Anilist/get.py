@@ -1,7 +1,7 @@
 import json
 import requests
 
-from animelookup import queries
+import anilistqueries as queries
 
 
 class AGet:

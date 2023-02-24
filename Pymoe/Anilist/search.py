@@ -3,6 +3,7 @@ import requests
 
 import anilistqueries as queries
 
+
 class ASearch:
 	def __init__(self, settings):
 		self.settings = settings
