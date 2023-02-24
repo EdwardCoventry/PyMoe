@@ -1,6 +1,10 @@
 [![Documentation Status](https://readthedocs.org/projects/pymoe/badge/?version=latest)](http://pymoe.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.org/ccubed/PyMoe.svg?branch=master)](https://travis-ci.org/ccubed/PyMoe)
 # PyMoe
+
+vEdward
+
+# PyMoe
 Welcome to PyMoe, the only python lib you'll ever need if you need the animu/mangu on the python platform.
 ## 1.0
 This brings us to 1.0. A stable release for Pymoe. It supports the majority of my end goal websites and it has some good interfaces. This is a breaking change, thus the major bump.
