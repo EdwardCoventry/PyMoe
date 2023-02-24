@@ -1,7 +1,7 @@
 import json
 import requests
 
-import anilistqueries as queries
+from .. import anilistqueries
 
 
 class ASearch:
