@@ -1,8 +1,7 @@
 import json
 import requests
 
-from animelookup import queries
-
+import anilistqueries as queries
 
 class ASearch:
 	def __init__(self, settings):
