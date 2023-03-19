@@ -85,7 +85,7 @@ class ASearch:
         :return: Json object with returned results.
         :rtype: Json object with returned results.
         """
-		vars = {"id": id, "page": page, "perpage": perpage}
+		vars = {"id": anime_id, "page": page, "perpage": perpage}
 		r = requests.post(self.settings['apiurl'],
 		                  headers=self.settings['header'],
 		                  json={'query': query, 'variables': vars})
