@@ -1,331 +1,89 @@
+# search.py
 import json
 import requests
+from .ratelimiter import rate_limited
 
 class ASearch:
-	def __init__(self, settings):
-		self.settings = settings
+    def __init__(self, settings):
+        self.settings = settings
 
-	# def series_id_character(self, id, term, page=1, perpage=3):
-	# 	"""
-    #     Search for a character by term.
-    #     Results are paginated by default. Page specifies which page we're on.
-    #     Perpage specifies how many per page to request. 3 is just the example from the API docs.
-	#
-    #     :param term str: Name to search by
-    #     :param page int: Which page are we requesting? Starts at 1.
-    #     :param perpage int: How many results per page are we requesting?
-    #     :return: Json object with returned results.
-    #     :rtype: Json object with returned results.
-    #     """
-	# 	query_string = """\
-    #         query ($id: Int!, $type: MediaType, $page: Int = 1) {
-    #           Media(id: $id, type: $type) {
-    #             id
-    #             characters(page: $page, sort: [ROLE]) {
-    #               pageInfo {
-    #                 total
-    #                 perPage
-    #                 hasNextPage
-    #                 currentPage
-    #                 lastPage
-    #               }
-    #               edges {
-    #                 node {
-    #                   id
-    #                   name {
-    #                     first
-    #                     last
-    #                   }
-    #                   image {
-    #                     medium
-    #                     large
-    #                   }
-    #                 }
-    #                 role
-    #                 voiceActors {
-    #                   id
-    #                   name {
-    #                     first
-    #                     last
-    #                     native
-    #                   }
-    #                   image {
-    #                     medium
-    #                     large
-    #                   }
-    #                   language
-    #                 }
-    #               }
-    #             }
-    #           }
-    #         }
-    #     """
-	# 	vars = {"id": id, "page": page, "perpage": perpage}
-	# 	r = requests.post(self.settings['apiurl'],
-	# 	                  headers=self.settings['header'],
-	# 	                  json={'query': query_string, 'variables': vars})
-	# 	jsd = r.text
-	#
-	# 	try:
-	# 		jsd = json.loads(jsd)
-	# 	except ValueError:
-	# 		return None
-	# 	else:
-	# 		return jsd
-
-	def series_id_character_names(self, query, anime_id, page=1, perpage=25):
-		"""
+    @rate_limited
+    def series_id_character_names(self, query, anime_id, page=1, perpage=25):
+        """
         Search for a character by term.
         Results are paginated by default. Page specifies which page we're on.
         Perpage specifies how many per page to request. 3 is just the example from the API docs.
 
-        :param term str: Name to search by
-        :param page int: Which page are we requesting? Starts at 1.
-        :param perpage int: How many results per page are we requesting?
+        :param str query: GraphQL query string
+        :param int anime_id: Anime ID to search characters for
+        :param int page: Which page are we requesting? Starts at 1.
+        :param int perpage: How many results per page are we requesting?
         :return: Json object with returned results.
-        :rtype: Json object with returned results.
+        :rtype: dict or NoneType
         """
-		vars = {"id": anime_id, "page": page, "perpage": perpage}
-		r = requests.post(self.settings['apiurl'],
-		                  headers=self.settings['header'],
-		                  json={'query': query, 'variables': vars})
-		jsd = r.text
+        vars = {"id": anime_id, "page": page, "perpage": perpage}
+        r = requests.post(self.settings['apiurl'],
+                          headers=self.settings['header'],
+                          json={'query': query, 'variables': vars})
+        jsd = r.text
 
-		try:
-			jsd = json.loads(jsd)
-		except ValueError:
-			return None
-		else:
-			return jsd
+        try:
+            jsd = json.loads(jsd)
+        except ValueError:
+            return None, r.headers
+        else:
+            return jsd, r.headers
 
-	# def character(self, term, page=1, perpage=3):
-	# 	"""
-    #     Search for a character by term.
-    #     Results are paginated by default. Page specifies which page we're on.
-    #     Perpage specifies how many per page to request. 3 is just the example from the API docs.
-	#
-    #     :param term str: Name to search by
-    #     :param page int: Which page are we requesting? Starts at 1.
-    #     :param perpage int: How many results per page are we requesting?
-    #     :return: Json object with returned results.
-    #     :rtype: Json object with returned results.
-    #     """
-	# 	query_string = """\
-    #         query ($query: String, $page: Int, $perpage: Int) {
-    #             Page (page: $page, perPage: $perpage) {
-    #                 pageInfo {
-    #                     total
-    #                     currentPage
-    #                     lastPage
-    #                     hasNextPage
-    #                 }
-    #                 characters (search: $query) {
-    #                     id
-    #                     name {
-    #                         first
-    #                         last
-    #                     }
-    #                     image {
-    #                         large
-    #                     }
-    #                 }
-    #             }
-    #         }
-    #     """
-	# 	vars = {"query": term, "page": page, "perpage": perpage}
-	# 	r = requests.post(self.settings['apiurl'],
-	# 	                  headers=self.settings['header'],
-	# 	                  json={'query': query_string, 'variables': vars})
-	# 	jsd = r.text
-	#
-	# 	try:
-	# 		jsd = json.loads(jsd)
-	# 	except ValueError:
-	# 		return None
-	# 	else:
-	# 		return jsd
-
-	def anime(self, term, page=1, perpage=100, query=None):
-		"""
+    @rate_limited
+    def anime(self, term, page=1, perpage=100, query=None):
+        """
         Search for an anime by term.
         Results are paginated by default. Page specifies which page we're on.
         Perpage specifies how many per page to request. 3 is just the example from the API docs.
 
-        :param term str: Name to search by
-        :param page int: Which page are we requesting? starts at 1.
-        :param perpage int: How many results per page? defaults to 3.
-        :return: List of dictionaries which are anime objects or None
-        :rtype: list of dict or NoneType
+        :param str term: Name to search by
+        :param int page: Which page are we requesting? starts at 1.
+        :param int perpage: How many results per page? defaults to 3.
+        :param str query: GraphQL query string
+        :return: Json object with returned results.
+        :rtype: dict or NoneType
         """
+        assert query
 
-		assert query
+        vars = {"query": term, "page": page, "perpage": perpage}
+        r = requests.post(self.settings['apiurl'],
+                          headers=self.settings['header'],
+                          json={'query': query, 'variables': vars})
+        jsd = r.text
 
-		vars = {"query": term, "page": page, "perpage": perpage}
-		r = requests.post(self.settings['apiurl'],
-		                  headers=self.settings['header'],
-		                  json={'query': query, 'variables': vars})
-		jsd = r.text
+        try:
+            jsd = json.loads(jsd)
+        except ValueError:
+            return None, r.headers
+        else:
+            return jsd, r.headers
 
-		try:
-			jsd = json.loads(jsd)
-		except ValueError:
-			return None
-		else:
-			return jsd
+    @rate_limited
+    def anime_listings(self, sort_by, query, page=1, perpage=100):
+        """
+        Search for anime listings sorted by the specified criteria.
 
-	def anime_listings(self, sort_by, query, page=1, perpage=100):
+        :param str sort_by: The criteria to sort by
+        :param str query: GraphQL query string
+        :param int page: Which page are we requesting? starts at 1.
+        :param int perpage: How many results per page? defaults to 3.
+        :return: Json object with returned results.
+        :rtype: dict or NoneType
+        """
+        vars = {"page": page, "perpage": perpage}
+        r = requests.post(self.settings['apiurl'],
+                          headers=self.settings['header'],
+                          json={'query': query, 'variables': vars})
+        jsd = r.text
 
-		vars = {"page": page, "perpage": perpage}
-		r = requests.post(self.settings['apiurl'],
-						  headers=self.settings['header'],
-						  json={'query': query, 'variables': vars})
-		jsd = r.text
-
-		try:
-			jsd = json.loads(jsd)
-		except ValueError:
-			return None
-		else:
-			return jsd
-
-# def manga(self, term, page=1, perpage=3):
-	# 	"""
-    #     Search for a manga by term.
-    #     Results are paginated by default. Page specifies which page we're on.
-    #     Perpage specifies how many per page to request. 3 is just the example from the API docs.
-	#
-    #     :param term str: Name to search by
-    #     :param page int: Which page are we requesting? Starts at 1.
-    #     :param perpage int: How many results per page? defaults to 3.
-    #     :return: List of dictionaries which are manga objects or None
-    #     :rtype: list of dict or NoneType
-    #     """
-	# 	query_string = """\
-    #         query ($query: String, $page: Int, $perpage: Int) {
-    #             Page (page: $page, perPage: $perpage) {
-    #                 pageInfo {
-    #                     total
-    #                     currentPage
-    #                     lastPage
-    #                     hasNextPage
-    #                 }
-    #                 media (search: $query, type: MANGA) {
-    #                     id
-    #                     title {
-    #                         romaji
-    #                         english
-    #                     }
-    #                     coverImage {
-    #                         large
-    #                     }
-    #                     averageScore
-    #                     popularity
-    #                     chapters
-    #                     volumes
-    #                     season
-    #                     hashtag
-    #                     isAdult
-    #                 }
-    #             }
-    #         }
-    #     """
-	# 	vars = {"query": term, "page": page, "perpage": perpage}
-	# 	r = requests.post(self.settings['apiurl'],
-	# 	                  headers=self.settings['header'],
-	# 	                  json={'query': query_string, 'variables': vars})
-	# 	jsd = r.text
-	#
-	# 	try:
-	# 		jsd = json.loads(jsd)
-	# 	except ValueError:
-	# 		return None
-	# 	else:
-	# 		return jsd
-	#
-	# def staff(self, term, page=1, perpage=3):
-	# 	"""
-    #     Search for staff by term. Staff means actors, directors, etc.
-    #     Results are paginated by default. Page specifies which page we're on.
-    #     Perpage specifies how many per page to request. 3 is just the example from the API docs.
-	#
-    #     :param term str: Name to search by
-    #     :param page int: What page are we requesting? Starts at 1.
-    #     :param perpage int: How many results per page? Defaults to 3.
-    #     :return: List of dictionaries which are staff objects or None
-    #     :rtype: list of dict or NoneType
-    #     """
-	# 	query_string = """\
-    #         query ($query: String, $page: Int, $perpage: Int) {
-    #             Page (page: $page, perPage: $perpage) {
-    #                 pageInfo {
-    #                     total
-    #                     currentPage
-    #                     lastPage
-    #                     hasNextPage
-    #                 }
-    #                 staff (search: $query) {
-    #                     id
-    #                     name {
-    #                         first
-    #                         last
-    #                     }
-    #                     image {
-    #                         large
-    #                     }
-    #                 }
-    #             }
-    #         }
-    #     """
-	# 	vars = {"query": term, "page": page, "perpage": perpage}
-	# 	r = requests.post(self.settings['apiurl'],
-	# 	                  headers=self.settings['header'],
-	# 	                  json={'query': query_string, 'variables': vars})
-	# 	jsd = r.text
-	#
-	# 	try:
-	# 		jsd = json.loads(jsd)
-	# 	except ValueError:
-	# 		return None
-	# 	else:
-	# 		return jsd
-	#
-	# def studio(self, term, page=1, perpage=3):
-	# 	"""
-    #     Search for a studio by term.
-    #     Results are paginated by default. Page specifies which page we're on.
-    #     Perpage specifies how many per page to request. 3 is just the example from the API docs.
-	#
-    #     :param term str: Name to search by
-    #     :param page int: What page are we requesting? starts at 1.
-    #     :param perpage int: How many results per page? defaults to 3.
-    #     :return: List of dictionaries which are studio objects or None
-    #     :rtype: list of dict or NoneType
-    #     """
-	# 	query_string = """\
-    #         query ($query: String, $page: Int, $perpage: Int) {
-    #             Page (page: $page, perPage: $perpage) {
-    #                 pageInfo {
-    #                     total
-    #                     currentPage
-    #                     lastPage
-    #                     hasNextPage
-    #                 }
-    #                 studios (search: $query) {
-    #                     id
-    #                     name
-    #                 }
-    #             }
-    #         }
-    #     """
-	# 	vars = {"query": term, "page": page, "perpage": perpage}
-	# 	r = requests.post(self.settings['apiurl'],
-	# 	                  headers=self.settings['header'],
-	# 	                  json={'query': query_string, 'variables': vars})
-	# 	jsd = r.text
-	#
-	# 	try:
-	# 		jsd = json.loads(jsd)
-	# 	except ValueError:
-	# 		return None
-	# 	else:
-	# 		return jsd
+        try:
+            jsd = json.loads(jsd)
+        except ValueError:
+            return None, r.headers
+        else:
+            return jsd, r.headers
