@@ -1,16 +1,25 @@
 import time
 from functools import wraps
 from requests import RequestException
+import threading
 
 MAX_RETRIES = 5
 BASE_WAIT_SECONDS = 2
 
-
 class RateLimiter:
-    def __init__(self, requests_per_minute=90):
+    def __init__(self, requests_per_minute=90, min_time_between_calls=1.0):
+        """
+        :param requests_per_minute: Default assumed rate limit from AniList (90).
+        :param min_time_between_calls: Additional wait time (in seconds) to prevent bursts.
+        """
         self.requests_per_minute = requests_per_minute
         self.remaining_requests = requests_per_minute
         self.reset_time = None
+
+        # The new attributes:
+        self.min_time_between_calls = min_time_between_calls
+        self._lock = threading.Lock()
+        self._last_call_time = 0.0
 
     def _wait_for_reset(self):
         if self.reset_time:
@@ -27,7 +36,7 @@ class RateLimiter:
         if 'X-RateLimit-Remaining' in headers:
             self.remaining_requests = int(headers['X-RateLimit-Remaining'])
 
-        reset_epoch = headers.get('X-RateLimit-Reset', None)
+        reset_epoch = headers.get('X-RateLimit-Reset')
         if reset_epoch:
             self.reset_time = int(reset_epoch)
 
@@ -43,6 +52,16 @@ class RateLimiter:
         retries = 0
 
         while retries < MAX_RETRIES:
+            # 1) Enforce a minimum time between calls (burst limiting)
+            with self._lock:
+                now = time.time()
+                time_since_last = now - self._last_call_time
+                if time_since_last < self.min_time_between_calls:
+                    time.sleep(self.min_time_between_calls - time_since_last)
+                # Update the last call time
+                self._last_call_time = time.time()
+
+            # 2) If we have run out of requests, wait for the reset
             if self.remaining_requests <= 0:
                 self._wait_for_reset()
 
@@ -59,15 +78,15 @@ class RateLimiter:
                 else:
                     raise
 
-        raise RequestException(f"Max retries reached. Rate limit still exceeded after {retries} attempts.")
+        raise RequestException(
+            f"Max retries reached. Rate limit still exceeded after {retries} attempts."
+        )
 
-
-rate_limiter = RateLimiter()
-
+# Create your global instance
+rate_limiter = RateLimiter(min_time_between_calls=1.0)
 
 def rate_limited(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         return rate_limiter.send_request_with_retry(func, *args, **kwargs)
-
     return wrapper
