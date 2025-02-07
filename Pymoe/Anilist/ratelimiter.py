@@ -7,7 +7,7 @@ MAX_RETRIES = 5
 BASE_WAIT_SECONDS = 2
 
 class RateLimiter:
-    def __init__(self, requests_per_minute=90, min_time_between_calls=1.0):
+    def __init__(self, requests_per_minute=60, min_time_between_calls=2.0):
         """
         :param requests_per_minute: Default assumed rate limit from AniList (90).
         :param min_time_between_calls: Additional wait time (in seconds) to prevent bursts.
@@ -83,7 +83,7 @@ class RateLimiter:
         )
 
 # Create your global instance
-rate_limiter = RateLimiter(min_time_between_calls=1.0)
+rate_limiter = RateLimiter()
 
 def rate_limited(func):
     @wraps(func)
